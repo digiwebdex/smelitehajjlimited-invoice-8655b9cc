@@ -336,10 +336,20 @@
   }
 
   /* Strip on-screen card chrome from the document */
-  .invoice-print-area .invoice-document {
+  .invoice-print-area .invoice-document,
+  .invoice-sample-document {
+    width: 210mm !important;
+    min-height: 297mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     border: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .invoice-print-payment-history {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
   }
 
   /* Items table: header repeats, rows never split */
