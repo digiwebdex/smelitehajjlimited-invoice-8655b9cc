@@ -352,6 +352,16 @@
     border-radius: 8px !important;
   }
 
+  /* Keep pill badge text centered in print/PDF */
+  .invoice-sample-document [style*="border-radius: 999px"],
+  .invoice-document [style*="border-radius: 999px"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    line-height: 1 !important;
+  }
+
   /* Items table: header repeats, rows never split */
   .invoice-items thead { display: table-header-group !important; }
   .invoice-items tfoot { display: table-footer-group !important; }

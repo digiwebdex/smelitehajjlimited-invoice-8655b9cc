@@ -92,6 +92,23 @@ const cleanNumber = (value: number | string | null | undefined) => {
 const titleCase = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 
+/** Pill badge — flex centering keeps label centered in PDF/print capture */
+const pillBadgeStyle = (colors: { background: string; color: string }, size: "sm" | "md" = "md") => ({
+  display: "inline-flex" as const,
+  alignItems: "center" as const,
+  justifyContent: "center" as const,
+  textAlign: "center" as const,
+  lineHeight: 1,
+  boxSizing: "border-box" as const,
+  borderRadius: "999px",
+  padding: size === "sm" ? "3px 12px" : "4px 14px",
+  minHeight: size === "sm" ? "18px" : "22px",
+  minWidth: size === "sm" ? "44px" : "52px",
+  fontWeight: 600,
+  whiteSpace: "nowrap" as const,
+  ...colors,
+});
+
 /**
  * Reference invoice layout — matches Glorious Printing Zone PDF design.
  * One template for on-screen preview, print, and PDF download.
@@ -278,19 +295,17 @@ export const ThemedInvoiceDocument = ({
             </div>
           )}
           {L.header.showStatusBadge && (
-            <div
-              style={{
-                display: "inline-block",
-                marginTop: "6px",
-                padding: "3px 12px",
-                borderRadius: "999px",
-                fontSize: "9pt",
-                fontWeight: 700,
-                textTransform: "capitalize",
-                ...statusStyle,
-              }}
-            >
-              {invoice.status || "Unpaid"}
+            <div style={{ marginTop: "6px", textAlign: "right" }}>
+              <span
+                style={{
+                  ...pillBadgeStyle(statusStyle, "md"),
+                  fontSize: "9pt",
+                  fontWeight: 700,
+                  textTransform: "capitalize",
+                }}
+              >
+                {invoice.status || "Unpaid"}
+              </span>
             </div>
           )}
         </div>
@@ -629,13 +644,8 @@ export const ThemedInvoiceDocument = ({
               </span>
               <span
                 style={{
-                  display: "inline-block",
-                  padding: "2px 10px",
-                  borderRadius: "999px",
-                  background: "#e5e7eb",
-                  color: SAMPLE.muted,
+                  ...pillBadgeStyle({ background: "#e5e7eb", color: SAMPLE.muted }, "sm"),
                   fontSize: "8pt",
-                  fontWeight: 600,
                   flexShrink: 0,
                 }}
               >
