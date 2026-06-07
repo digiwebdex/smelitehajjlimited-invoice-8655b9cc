@@ -73,6 +73,16 @@ interface InvoiceData {
   notes?: string | null;
 }
 
+export interface InvoicePageSlice {
+  showHeader?: boolean;
+  showBillTo?: boolean;
+  showSummary?: boolean;
+  showInWords?: boolean;
+  showNotes?: boolean;
+  showPaymentHistory?: boolean;
+  showFooter?: boolean;
+}
+
 interface ThemedInvoiceDocumentProps {
   invoice: InvoiceData;
   items: InvoiceItemData[];
@@ -82,6 +92,8 @@ interface ThemedInvoiceDocumentProps {
   branding?: BrandSettings | null;
   layout?: InvoiceLayout;
   pdfMode?: boolean;
+  pageSlice?: InvoicePageSlice;
+  pageLabel?: string;
 }
 
 const cleanNumber = (value: number | string | null | undefined) => {
@@ -92,22 +104,27 @@ const cleanNumber = (value: number | string | null | undefined) => {
 const titleCase = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 
-/** Pill badge — flex centering keeps label centered in PDF/print capture */
-const pillBadgeStyle = (colors: { background: string; color: string }, size: "sm" | "md" = "md") => ({
-  display: "inline-flex" as const,
-  alignItems: "center" as const,
-  justifyContent: "center" as const,
-  textAlign: "center" as const,
-  lineHeight: 1,
-  boxSizing: "border-box" as const,
-  borderRadius: "999px",
-  padding: size === "sm" ? "3px 12px" : "4px 14px",
-  minHeight: size === "sm" ? "18px" : "22px",
-  minWidth: size === "sm" ? "44px" : "52px",
-  fontWeight: 600,
-  whiteSpace: "nowrap" as const,
-  ...colors,
-});
+/** Pill badge — fixed height + line-height centers text reliably in html2canvas PDF */
+const InvoicePillBadge = ({
+  label,
+  backgroundColor,
+  color,
+  size = "md",
+  className = "",
+}: {
+  label: string;
+  backgroundColor: string;
+  color: string;
+  size?: "sm" | "md";
+  className?: string;
+}) => (
+  <span
+    className={`invoice-pill-badge invoice-pill-badge--${size} ${className}`.trim()}
+    style={{ backgroundColor, color }}
+  >
+    {label}
+  </span>
+);
 
 /**
  * Reference invoice layout — matches Glorious Printing Zone PDF design.
@@ -122,10 +139,15 @@ export const ThemedInvoiceDocument = ({
   branding,
   layout,
   pdfMode = false,
+  pageSlice,
+  pageLabel,
 }: ThemedInvoiceDocumentProps) => {
   theme || defaultTheme;
   const b = branding || defaultBranding;
   const L = layout || defaultInvoiceLayout;
+
+  const showSection = (key: keyof InvoicePageSlice) =>
+    !pageSlice || pageSlice[key] !== false;
 
   const formatCurrency = (amount: number) =>
     `Tk ${new Intl.NumberFormat("en-BD", {
@@ -181,7 +203,7 @@ export const ThemedInvoiceDocument = ({
       className="invoice-document invoice-sample-document invoice-print-document"
       style={{
         width: "210mm",
-        minHeight: "297mm",
+        minHeight: pdfMode ? "auto" : "297mm",
         margin: "0 auto",
         padding: pagePadding,
         boxSizing: "border-box",
@@ -192,13 +214,28 @@ export const ThemedInvoiceDocument = ({
         lineHeight: L.typography.lineHeight,
         boxShadow: pdfMode ? "none" : "0 10px 35px rgba(15,23,42,0.10)",
         borderRadius: pdfMode ? 0 : "10px",
-        display: "flex",
-        flexDirection: "column",
+        display: pdfMode ? "block" : "flex",
+        flexDirection: pdfMode ? undefined : "column",
         WebkitPrintColorAdjust: "exact",
         printColorAdjust: "exact",
       }}
     >
+      {pageLabel && (
+        <div
+          style={{
+            fontSize: "8pt",
+            color: SAMPLE.muted,
+            textAlign: "right",
+            marginBottom: "3mm",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {pageLabel} — continued
+        </div>
+      )}
+
       {/* HEADER */}
+      {showSection("showHeader") && (
       <header
         className="invoice-print-header"
         style={{
@@ -296,23 +333,21 @@ export const ThemedInvoiceDocument = ({
           )}
           {L.header.showStatusBadge && (
             <div style={{ marginTop: "6px", textAlign: "right" }}>
-              <span
-                style={{
-                  ...pillBadgeStyle(statusStyle, "md"),
-                  fontSize: "9pt",
-                  fontWeight: 700,
-                  textTransform: "capitalize",
-                }}
-              >
-                {invoice.status || "Unpaid"}
-              </span>
+              <InvoicePillBadge
+                label={invoice.status || "Unpaid"}
+                backgroundColor={statusStyle.background}
+                color={statusStyle.color}
+                size="md"
+                className="invoice-pill-badge--status"
+              />
             </div>
           )}
         </div>
       </header>
+      )}
 
       {/* BILL TO + DATE */}
-      {(L.body.showBilledTo || L.body.showInvoiceDate) && (
+      {showSection("showBillTo") && (L.body.showBilledTo || L.body.showInvoiceDate) && (
         <section
           className="invoice-print-billto"
           style={{
@@ -398,7 +433,8 @@ export const ThemedInvoiceDocument = ({
         </section>
       )}
 
-      {/* ITEM TABLE */}
+      {/* ITEM TABLE — always shown when items exist; thead repeats on each PDF page */}
+      {items.length > 0 && (
       <table
         className="invoice-items invoice-print-table"
         style={{ width: "100%", borderCollapse: "collapse", marginBottom: "4mm", fontSize: `${L.body.tableFontSize}pt` }}
@@ -505,8 +541,10 @@ export const ThemedInvoiceDocument = ({
           })}
         </tbody>
       </table>
+      )}
 
       {/* SUMMARY */}
+      {showSection("showSummary") && (
       <section
         className="invoice-totals invoice-print-summary invoice-keep-together"
         style={{ display: "flex", justifyContent: "flex-end", marginBottom: "3mm" }}
@@ -560,9 +598,10 @@ export const ThemedInvoiceDocument = ({
           )}
         </div>
       </section>
+      )}
 
       {/* IN WORD */}
-      {L.body.showInWords && (
+      {showSection("showInWords") && L.body.showInWords && (
         <div
           className="invoice-print-inwords invoice-keep-together"
           style={{ marginBottom: "4mm", fontSize: "9pt", color: SAMPLE.muted }}
@@ -573,7 +612,7 @@ export const ThemedInvoiceDocument = ({
       )}
 
       {/* NOTES */}
-      {L.body.showNotes && invoice.notes && (
+      {showSection("showNotes") && L.body.showNotes && invoice.notes && (
         <section
           className="invoice-print-notes invoice-keep-together"
           style={{
@@ -591,7 +630,7 @@ export const ThemedInvoiceDocument = ({
       )}
 
       {/* PAYMENT HISTORY */}
-      {L.body.showPaymentHistory && installments.length > 0 && (
+      {showSection("showPaymentHistory") && L.body.showPaymentHistory && installments.length > 0 && (
         <section
           className="invoice-print-payment-history invoice-keep-together"
           style={{
@@ -642,14 +681,13 @@ export const ThemedInvoiceDocument = ({
               <span style={{ color: SAMPLE.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
                 {formatDate(inst.paid_date)}
               </span>
-              <span
-                style={{
-                  ...pillBadgeStyle({ background: "#e5e7eb", color: SAMPLE.muted }, "sm"),
-                  fontSize: "8pt",
-                  flexShrink: 0,
-                }}
-              >
-                {inst.payment_method || "Cash"}
+              <span style={{ flexShrink: 0, lineHeight: 0 }}>
+                <InvoicePillBadge
+                  label={inst.payment_method || "Cash"}
+                  backgroundColor="#e5e7eb"
+                  color={SAMPLE.muted}
+                  size="sm"
+                />
               </span>
               <span style={{ color: SAMPLE.muted, flex: 1 }}>
                 — {getOrdinal(idx + 1)} Payment
@@ -669,9 +707,10 @@ export const ThemedInvoiceDocument = ({
         </section>
       )}
 
-      <div className="invoice-print-spacer" style={{ flex: 1, minHeight: "8mm" }} />
+      {!pdfMode && <div className="invoice-print-spacer" style={{ flex: 1, minHeight: "8mm" }} />}
 
       {/* FOOTER */}
+      {showSection("showFooter") && (
       <footer
         data-pdf-footer
         className="invoice-footer-block invoice-print-footer invoice-keep-together"
@@ -783,6 +822,7 @@ export const ThemedInvoiceDocument = ({
           </div>
         )}
       </footer>
+      )}
     </div>
   );
 };

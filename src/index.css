@@ -280,6 +280,47 @@
   @apply bg-muted-foreground/30;
 }
 
+/* Pill badges — fixed height/line-height for reliable html2canvas PDF centering */
+.invoice-pill-badge {
+  display: inline-block;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-indent: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-pill-badge--md {
+  height: 22px;
+  line-height: 22px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 11px;
+  font-size: 9pt;
+  min-width: 52px;
+}
+
+.invoice-pill-badge--sm {
+  height: 18px;
+  line-height: 18px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 9px;
+  font-size: 8pt;
+  min-width: 44px;
+}
+
+.invoice-pill-badge--status {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
 /* ===== Invoice Print Styles =====
  * Natural-flow pagination. The browser handles the item-table flow;
  * the .invoice-footer-block uses break-inside: avoid so it lands on
@@ -352,15 +393,6 @@
     border-radius: 8px !important;
   }
 
-  /* Keep pill badge text centered in print/PDF */
-  .invoice-sample-document [style*="border-radius: 999px"],
-  .invoice-document [style*="border-radius: 999px"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    line-height: 1 !important;
-  }
 
   /* Items table: header repeats, rows never split */
   .invoice-items thead { display: table-header-group !important; }

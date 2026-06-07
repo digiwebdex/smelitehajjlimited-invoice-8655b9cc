@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 const PAGE_BREAK_SAFETY_MM = 1.5;
+const PDF_CAPTURE_SCALE = 2;
 
 /**
  * Find safe Y positions (in px) where the page can be split without cutting
@@ -43,6 +44,19 @@ const getBreakpointsFromDom = (element: HTMLElement): number[] => {
 
   const isInsideAtomic = (pos: number) =>
     atomicRanges.some(([top, bottom]) => pos > top + 0.5 && pos < bottom - 0.5);
+
+  // Prefer table row boundaries for clean multi-page splits.
+  const rowNodes = element.querySelectorAll<HTMLElement>("tbody tr.invoice-row");
+  if (rowNodes.length > 0) {
+    rowNodes.forEach((row) => {
+      const rect = row.getBoundingClientRect();
+      const bottom = rect.bottom - rootRect.top;
+      if (rect.height > 0) {
+        positions.add(Math.max(0, Math.round(bottom)));
+      }
+    });
+    return Array.from(positions).sort((a, b) => a - b);
+  }
 
   const nodes = element.querySelectorAll<HTMLElement>(selectors.join(", "));
   const positions = new Set<number>([0]);
@@ -105,11 +119,24 @@ export async function generateInvoicePdfFromDom(
 ): Promise<Blob | void> {
   const output = options.output ?? "save";
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale: PDF_CAPTURE_SCALE,
     useCORS: true,
     backgroundColor: "#ffffff",
     logging: false,
     windowWidth: element.scrollWidth,
+    onclone: (_doc, clonedElement) => {
+      clonedElement.querySelectorAll<HTMLElement>(".invoice-pill-badge").forEach((badge) => {
+        badge.style.display = "inline-block";
+        badge.style.textAlign = "center";
+        badge.style.verticalAlign = "middle";
+        badge.style.paddingTop = "0";
+        badge.style.paddingBottom = "0";
+        const size = badge.classList.contains("invoice-pill-badge--sm") ? 18 : 22;
+        badge.style.height = `${size}px`;
+        badge.style.lineHeight = `${size}px`;
+        badge.style.borderRadius = `${size / 2}px`;
+      });
+    },
   });
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -141,7 +168,9 @@ export async function generateInvoicePdfFromDom(
   }
 
   // Multi-page: slice respecting natural element boundaries
-  const breakpointsPx = getBreakpointsFromDom(element);
+  const breakpointsPx = getBreakpointsFromDom(element).map(
+    (point) => point * PDF_CAPTURE_SCALE
+  );
   const pageHeightPx = Math.floor(usablePageHeightMm * pixelsPerMm);
   const minSliceHeightPx = Math.floor(Math.max(25, 18 * pixelsPerMm));
 
