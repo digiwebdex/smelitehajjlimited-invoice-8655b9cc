@@ -14,6 +14,7 @@ const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
 
 const app = express();
+app.set('trust proxy', 1);
 
 // CORS - allow your domain
 app.use(cors({
@@ -22,17 +23,82 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+const rateLimitBuckets = new Map();
+const rateLimit = ({ windowMs, max, message }) => (req, res, next) => {
+  const key = `${req.ip}:${req.path}`;
+  const now = Date.now();
+  let bucket = rateLimitBuckets.get(key);
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    rateLimitBuckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  if (bucket.count > max) {
+    return res.status(429).json({ error: message || 'Too many requests. Try again later.' });
+  }
+  return next();
+};
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (now > bucket.resetAt) rateLimitBuckets.delete(key);
+  }
+}, 60_000);
+
+const validatePassword = (password) => {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters';
+  if (password.length > 128) return 'Password is too long';
+  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+  return null;
+};
+
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many attempts. Wait 15 minutes and try again.',
+});
+const signupRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many sign-up attempts. Try again in an hour.',
+});
+
 // Static files for uploads
 const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// File upload config
+// File upload config — images only (company logos)
+const ALLOWED_UPLOAD_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const ALLOWED_UPLOAD_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+    cb(null, `${Date.now()}-${base}${ext}`);
+  },
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_UPLOAD_MIME.has(file.mimetype) || !ALLOWED_UPLOAD_EXT.has(ext)) {
+      return cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'));
+    }
+    return cb(null, true);
+  },
+});
 
 // Database connection pool
 const pool = new Pool({
@@ -221,13 +287,14 @@ app.get('/api/ready', async (req, res) => {
 // ============================================
 
 // Sign Up
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', signupRateLimit, async (req, res) => {
   try {
     const rawEmail = (req.body?.email || '').toString().trim().toLowerCase();
     const password = req.body?.password;
     const full_name = req.body?.full_name;
     if (!rawEmail || !password) return res.status(400).json({ error: 'Email and password required' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).json({ error: passwordError });
 
     const passwordHash = await bcrypt.hash(password, 12);
 
@@ -242,12 +309,12 @@ app.post('/api/auth/signup', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
     console.error('[signup] error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Sign up failed. Please try again.' });
   }
 });
 
 // Sign In
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authRateLimit, async (req, res) => {
   const startedAt = Date.now();
   const rawEmail = (req.body?.email || '').toString().trim().toLowerCase();
   const password = req.body?.password;
@@ -329,10 +396,11 @@ app.get('/api/auth/user', authenticate, async (req, res) => {
 });
 
 // Update password
-app.post('/api/auth/update-password', authenticate, async (req, res) => {
+app.post('/api/auth/update-password', authenticate, authRateLimit, async (req, res) => {
   try {
     const { password } = req.body;
-    if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).json({ error: passwordError });
     const passwordHash = await bcrypt.hash(password, 12);
     await pool.query('UPDATE users SET password_hash = $1, encrypted_password = $1 WHERE id = $2', [passwordHash, req.user.id]);
     res.json({ success: true });
@@ -342,17 +410,25 @@ app.post('/api/auth/update-password', authenticate, async (req, res) => {
 });
 
 // Reset password (simplified - no email sending)
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', authRateLimit, async (req, res) => {
   res.json({ success: true, message: 'Contact admin to reset your password.' });
 });
 
 // ============================================
 // FILE UPLOAD
 // ============================================
-app.post('/api/upload', authenticate, requireApproved, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `${BASE_URL}/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
+app.post('/api/upload', authenticate, requireApproved, (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large (max 5MB)' });
+      }
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const fileUrl = `${BASE_URL}/uploads/${req.file.filename}`;
+    return res.json({ url: fileUrl });
+  });
 });
 
 // ============================================

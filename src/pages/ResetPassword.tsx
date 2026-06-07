@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Lock, CheckCircle } from "lucide-react";
 import smEliteLogo from "@/assets/sm-elite-hajj-logo.jpeg";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -38,8 +39,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 

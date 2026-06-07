@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Lock, Mail, AlertCircle, User, ArrowLeft } from "lucide-react";
 import smEliteLogo from "@/assets/sm-elite-hajj-logo.jpeg";
+import { PASSWORD_POLICY_HINT, validatePassword } from "@/lib/passwordPolicy";
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -44,6 +45,12 @@ export default function Login() {
         setError(result.error || "Failed to send reset email");
       }
     } else if (isSignUp) {
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        setError(passwordError);
+        setIsLoading(false);
+        return;
+      }
       const result = await signup(email, password, fullName);
       if (result.success) {
         setSuccess("Account created! Please check your email to verify your account before signing in.");
@@ -210,9 +217,12 @@ export default function Login() {
                       className="pl-10"
                       required
                       disabled={isLoading}
-                      minLength={6}
+                      minLength={8}
                     />
                   </div>
+                  {isSignUp && (
+                    <p className="text-xs text-muted-foreground">{PASSWORD_POLICY_HINT}</p>
+                  )}
                 </div>
               )}
 

@@ -33,7 +33,7 @@ module.exports = {
         DB_PORT: '5440',
         DB_NAME: 'sm_elite_hajj',
         DB_USER: 'sm_elite_user',
-        DB_PASSWORD: 'SmEliteHajj2026Pass',
+        // DB_PASSWORD and JWT_SECRET must come from migration/backend/.env only.
         CORS_ORIGIN: 'https://soft.smelitehajj.com',
         FRONTEND_URL: 'https://soft.smelitehajj.com',
         BASE_URL: 'https://soft.smelitehajj.com/api',
