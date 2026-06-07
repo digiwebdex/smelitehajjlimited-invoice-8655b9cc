@@ -13,8 +13,8 @@ module.exports = {
   apps: [
     {
       name: 'smelitehajj-api',
-      script: '/var/www/smelitehajj-invoice/migration/backend/server.js',
-      cwd: '/var/www/smelitehajj-invoice/migration/backend',
+      script: '/var/www/smelitehajjinvoice/migration/backend/server.js',
+      cwd: '/var/www/smelitehajjinvoice/migration/backend',
       interpreter: 'node',
       instances: 1,
       exec_mode: 'fork',
@@ -37,7 +37,7 @@ module.exports = {
         CORS_ORIGIN: 'https://soft.smelitehajj.com',
         FRONTEND_URL: 'https://soft.smelitehajj.com',
         BASE_URL: 'https://soft.smelitehajj.com/api',
-        UPLOADS_DIR: '/var/www/smelitehajj-invoice/migration/backend/uploads',
+        UPLOADS_DIR: '/var/www/smelitehajjinvoice/migration/backend/uploads',
         // JWT_SECRET MUST come from .env on the server. Do NOT hardcode here.
         // server.js will refuse to start if JWT_SECRET is missing or weak.
       },
