@@ -108,8 +108,52 @@ const requireAdmin = async (req, res, next) => {
     if (rows.length === 0) return res.status(403).json({ error: 'Admin access required' });
     next();
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Access check failed' });
   }
+};
+
+/** Block unapproved users from business APIs (admins always pass). */
+const requireApproved = async (req, res, next) => {
+  try {
+    const access = await getUserAccessState(req.user.id);
+    if (!access) return res.status(403).json({ error: 'User not found' });
+    if (access.is_admin || access.is_approved) {
+      req.access = access;
+      return next();
+    }
+    return res.status(403).json({ error: 'Account pending admin approval' });
+  } catch {
+    return res.status(500).json({ error: 'Access check failed' });
+  }
+};
+
+const ALLOWED_COMPANY_COLUMNS = new Set([
+  'name', 'tagline', 'email', 'phone', 'address', 'logo_url',
+  'address_line1', 'address_line2', 'website', 'thank_you_text',
+  'show_qr_code', 'footer_alignment',
+]);
+
+const ALLOWED_THEME_COLUMNS = new Set([
+  'primary_color', 'secondary_color', 'accent_color', 'header_text_color',
+  'invoice_title_color', 'subtotal_text_color', 'paid_text_color',
+  'balance_bg_color', 'balance_text_color', 'table_header_bg',
+  'table_header_text', 'border_color', 'badge_paid_color',
+  'badge_partial_color', 'badge_unpaid_color', 'footer_text_color',
+]);
+
+const pickAllowedFields = (body, allowed) => {
+  const fields = body || {};
+  return Object.keys(fields).filter(
+    (key) => allowed.has(key) && fields[key] !== undefined
+  );
+};
+
+const buildWhitelistedUpdate = (fields, allowed, startParamIndex = 2) => {
+  const keys = pickAllowedFields(fields, allowed);
+  if (keys.length === 0) return null;
+  const sets = keys.map((key, index) => `"${key}" = $${startParamIndex + index}`).join(', ');
+  const values = keys.map((key) => fields[key]);
+  return { sets, values, keys };
 };
 
 const getUserAccessState = async (userId) => {
@@ -305,7 +349,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // ============================================
 // FILE UPLOAD
 // ============================================
-app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
+app.post('/api/upload', authenticate, requireApproved, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const fileUrl = `${BASE_URL}/uploads/${req.file.filename}`;
   res.json({ url: fileUrl });
@@ -314,7 +358,7 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
 // ============================================
 // COMPANIES ROUTES
 // ============================================
-app.get('/api/companies', authenticate, async (req, res) => {
+app.get('/api/companies', authenticate, requireApproved, async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT * FROM companies WHERE user_id = $1 ORDER BY created_at DESC',
@@ -326,7 +370,7 @@ app.get('/api/companies', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/companies/:id', authenticate, async (req, res) => {
+app.get('/api/companies/:id', authenticate, requireApproved, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM companies WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     res.json({ data: rows[0] || null });
@@ -335,7 +379,7 @@ app.get('/api/companies/:id', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/companies', authenticate, async (req, res) => {
+app.post('/api/companies', authenticate, requireApproved, async (req, res) => {
   try {
     const { name, tagline, email, phone, address, logo_url, address_line1, address_line2, website, thank_you_text, show_qr_code, footer_alignment } = req.body;
     const { rows } = await pool.query(
@@ -349,25 +393,25 @@ app.post('/api/companies', authenticate, async (req, res) => {
   }
 });
 
-app.put('/api/companies/:id', authenticate, async (req, res) => {
+app.put('/api/companies/:id', authenticate, requireApproved, async (req, res) => {
   try {
-    const fields = req.body;
-    const keys = Object.keys(fields).filter(k => k !== 'id' && k !== 'user_id' && k !== 'created_at');
-    if (keys.length === 0) return res.status(400).json({ error: 'No fields to update' });
-    
-    const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
-    const vals = keys.map(k => fields[k]);
+    const update = buildWhitelistedUpdate(req.body, ALLOWED_COMPANY_COLUMNS, 2);
+    if (!update) return res.status(400).json({ error: 'No valid fields to update' });
+
+    const userParam = update.values.length + 2;
     const { rows } = await pool.query(
-      `UPDATE companies SET ${sets} WHERE id = $1 AND user_id = $${keys.length + 2} RETURNING *`,
-      [req.params.id, ...vals, req.user.id]
+      `UPDATE companies SET ${update.sets} WHERE id = $1 AND user_id = $${userParam} RETURNING *`,
+      [req.params.id, ...update.values, req.user.id]
     );
+    if (rows.length === 0) return res.status(404).json({ error: 'Company not found' });
     res.json({ data: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[companies PUT] error:', err.message);
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
-app.delete('/api/companies/:id', authenticate, async (req, res) => {
+app.delete('/api/companies/:id', authenticate, requireApproved, async (req, res) => {
   try {
     await pool.query('DELETE FROM companies WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     res.json({ data: { success: true } });
@@ -379,7 +423,7 @@ app.delete('/api/companies/:id', authenticate, async (req, res) => {
 // ============================================
 // INVOICES ROUTES
 // ============================================
-app.get('/api/invoices', authenticate, async (req, res) => {
+app.get('/api/invoices', authenticate, requireApproved, async (req, res) => {
   try {
     const { rows: invoices } = await pool.query(
       'SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC',
@@ -404,7 +448,7 @@ app.get('/api/invoices', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/invoices/next-number', authenticate, async (req, res) => {
+app.get('/api/invoices/next-number', authenticate, requireApproved, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT COUNT(*) as count FROM invoices WHERE user_id = $1', [req.user.id]);
     const year = new Date().getFullYear();
@@ -415,7 +459,7 @@ app.get('/api/invoices/next-number', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/invoices/:id', authenticate, async (req, res) => {
+app.get('/api/invoices/:id', authenticate, requireApproved, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -453,7 +497,7 @@ app.get('/api/public/invoices/:id', async (req, res) => {
   }
 });
 
-app.post('/api/invoices', authenticate, async (req, res) => {
+app.post('/api/invoices', authenticate, requireApproved, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -495,7 +539,7 @@ app.post('/api/invoices', authenticate, async (req, res) => {
   }
 });
 
-app.put('/api/invoices/:id', authenticate, async (req, res) => {
+app.put('/api/invoices/:id', authenticate, requireApproved, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -539,7 +583,7 @@ app.put('/api/invoices/:id', authenticate, async (req, res) => {
   }
 });
 
-app.delete('/api/invoices/:id', authenticate, async (req, res) => {
+app.delete('/api/invoices/:id', authenticate, requireApproved, async (req, res) => {
   try {
     await pool.query('DELETE FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     res.json({ data: { success: true } });
@@ -635,7 +679,7 @@ app.delete('/api/admin/users/:userId', authenticate, requireAdmin, async (req, r
 });
 
 // Quick edit invoice (PATCH)
-app.patch('/api/invoices/:id/quick-edit', authenticate, async (req, res) => {
+app.patch('/api/invoices/:id/quick-edit', authenticate, requireApproved, async (req, res) => {
   try {
     const { client_name, client_email, client_phone, client_address, notes } = req.body;
     const { rows } = await pool.query(
@@ -671,23 +715,23 @@ app.get('/api/theme', async (req, res) => {
   }
 });
 
-app.put('/api/theme', authenticate, async (req, res) => {
+app.put('/api/theme', authenticate, requireAdmin, async (req, res) => {
   try {
-    const fields = req.body;
-    const keys = Object.keys(fields).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
-    const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
-    const vals = keys.map(k => fields[k]);
+    const update = buildWhitelistedUpdate(req.body, ALLOWED_THEME_COLUMNS, 2);
+    if (!update) return res.status(400).json({ error: 'No valid fields to update' });
+
     const { rows } = await pool.query(
-      `UPDATE theme_settings SET ${sets} WHERE id = $1 RETURNING *`,
-      ['00000000-0000-0000-0000-000000000001', ...vals]
+      `UPDATE theme_settings SET ${update.sets} WHERE id = $1 RETURNING *`,
+      ['00000000-0000-0000-0000-000000000001', ...update.values]
     );
     res.json({ data: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[theme PUT] error:', err.message);
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
-app.post('/api/theme/reset', authenticate, async (req, res) => {
+app.post('/api/theme/reset', authenticate, requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `UPDATE theme_settings SET 
@@ -718,7 +762,7 @@ app.get('/api/branding', async (req, res) => {
   }
 });
 
-app.put('/api/branding', authenticate, async (req, res) => {
+app.put('/api/branding', authenticate, requireAdmin, async (req, res) => {
   try {
     // Get actual columns from DB
     const colRes = await pool.query(
@@ -763,7 +807,7 @@ app.put('/api/branding', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/branding/reset', authenticate, async (req, res) => {
+app.post('/api/branding/reset', authenticate, requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `UPDATE global_brand_settings SET 
@@ -808,7 +852,7 @@ app.get('/api/invoice-layout', async (req, res) => {
   }
 });
 
-app.put('/api/invoice-layout', authenticate, async (req, res) => {
+app.put('/api/invoice-layout', authenticate, requireAdmin, async (req, res) => {
   try {
     const layout = req.body?.layout || {};
     const { rows } = await pool.query(
@@ -830,7 +874,7 @@ app.get('/api/companies/:id/invoice-layout', async (req, res) => {
   }
 });
 
-app.put('/api/companies/:id/invoice-layout', authenticate, async (req, res) => {
+app.put('/api/companies/:id/invoice-layout', authenticate, requireApproved, async (req, res) => {
   try {
     const layout = req.body?.layout ?? null; // null clears override
     const { rows } = await pool.query(

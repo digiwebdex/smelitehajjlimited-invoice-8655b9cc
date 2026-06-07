@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+migration/backend/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
