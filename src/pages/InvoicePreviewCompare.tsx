@@ -7,6 +7,7 @@ import { useInvoice } from "@/hooks/useInvoices";
 import { useCompany } from "@/hooks/useCompanies";
 import { useTheme } from "@/hooks/useTheme";
 import { useBranding } from "@/hooks/useBranding";
+import { useEffectiveInvoiceLayout } from "@/hooks/useInvoiceLayout";
 import { ThemedInvoiceDocument } from "@/components/invoice/ThemedInvoiceDocument";
 import {
   renderAndDownloadInvoicePdf,
@@ -24,6 +25,7 @@ export default function InvoicePreviewCompare() {
   const { data: company, isLoading: companyLoading } = useCompany(invoice?.company_id);
   const { data: theme, isLoading: themeLoading } = useTheme();
   const { data: branding, isLoading: brandingLoading } = useBranding();
+  const { layout: invoiceLayout } = useEffectiveInvoiceLayout(invoice?.company_id);
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -104,6 +106,7 @@ export default function InvoicePreviewCompare() {
       company: companyData,
       theme: activeTheme,
       branding,
+      layout: invoiceLayout,
     })
       .then((blob) => {
         if (cancelled) return;
@@ -118,7 +121,7 @@ export default function InvoicePreviewCompare() {
       if (activeUrl) URL.revokeObjectURL(activeUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataReady, invoice?.id]);
+  }, [dataReady, invoice?.id, invoiceLayout]);
 
   if (!dataReady || !invoiceData) {
     return (
@@ -138,6 +141,7 @@ export default function InvoicePreviewCompare() {
       company: companyData,
       theme: activeTheme,
       branding,
+      layout: invoiceLayout,
       filename: `${invoice!.invoice_number}.pdf`,
     });
 
@@ -211,6 +215,7 @@ export default function InvoicePreviewCompare() {
                   company={companyData}
                   theme={activeTheme}
                   branding={branding}
+                  layout={invoiceLayout}
                   pdfMode
                 />
               </div>

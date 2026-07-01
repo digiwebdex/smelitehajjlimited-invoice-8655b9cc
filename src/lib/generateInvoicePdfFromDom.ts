@@ -45,6 +45,8 @@ const getBreakpointsFromDom = (element: HTMLElement): number[] => {
   const isInsideAtomic = (pos: number) =>
     atomicRanges.some(([top, bottom]) => pos > top + 0.5 && pos < bottom - 0.5);
 
+  const positions = new Set<number>([0]);
+
   // Prefer table row boundaries for clean multi-page splits.
   const rowNodes = element.querySelectorAll<HTMLElement>("tbody tr.invoice-row");
   if (rowNodes.length > 0) {
@@ -59,7 +61,6 @@ const getBreakpointsFromDom = (element: HTMLElement): number[] => {
   }
 
   const nodes = element.querySelectorAll<HTMLElement>(selectors.join(", "));
-  const positions = new Set<number>([0]);
 
   nodes.forEach((node) => {
     const style = window.getComputedStyle(node);

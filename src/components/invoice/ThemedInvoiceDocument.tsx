@@ -1,5 +1,5 @@
 import { InvoiceQRCode } from "@/components/InvoiceQRCode";
-import { ThemeSettings, defaultTheme } from "@/types/theme";
+import { ThemeSettings } from "@/types/theme";
 import { BrandSettings, defaultBranding } from "@/types/branding";
 import { numberToWords } from "@/lib/numberToWords";
 import { getInvoiceFooterDetails } from "@/lib/invoiceFooter";
@@ -142,7 +142,6 @@ export const ThemedInvoiceDocument = ({
   pageSlice,
   pageLabel,
 }: ThemedInvoiceDocumentProps) => {
-  theme || defaultTheme;
   const b = branding || defaultBranding;
   const L = layout || defaultInvoiceLayout;
 
@@ -174,6 +173,7 @@ export const ThemedInvoiceDocument = ({
     footerEmail,
     footerPhone,
     footerThankYou,
+    footerWebsite,
     showQR,
   } = getInvoiceFooterDetails(company, branding);
 
@@ -807,6 +807,9 @@ export const ThemedInvoiceDocument = ({
                 {addressLine2 && <div>{addressLine2}</div>}
                 {L.footer.showContact && (footerPhone || footerEmail) && (
                   <div>{[footerPhone, footerEmail].filter(Boolean).join(" | ")}</div>
+                )}
+                {L.footer.showWebsite && footerWebsite && (
+                  <div style={{ color: SAMPLE.blue }}>{footerWebsite}</div>
                 )}
               </div>
             )}

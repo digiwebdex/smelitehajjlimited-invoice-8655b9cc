@@ -168,12 +168,6 @@ export default function InvoiceDetail() {
   }, [id, isNew]);
 
   useEffect(() => {
-    if (isNew && nextInvoiceNumber) {
-      setInvoiceNumber(nextInvoiceNumber);
-    }
-  }, [isNew, nextInvoiceNumber]);
-
-  useEffect(() => {
     if (!existingInvoice || populated || existingInvoice.id !== id) return;
 
     setInvoiceNumber(existingInvoice.invoice_number);
