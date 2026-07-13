@@ -1,13 +1,22 @@
 .invoice-print-area {
   background: #ffffff;
-  overflow: auto;
 }
 
-.invoice-print-area .invoice-document {
+.invoice-print-area .invoice-document,
+.invoice-screen-preview .invoice-document {
   width: 210mm;
   min-height: 297mm;
   max-width: 210mm;
   box-sizing: border-box;
+}
+
+.invoice-a4-scaled {
+  width: 100%;
+  max-width: 100%;
+}
+
+.invoice-screen-preview {
+  background: #ffffff;
 }
 
 @media screen {
@@ -25,5 +34,10 @@
     width: 210mm !important;
     min-height: 297mm !important;
     max-width: 210mm !important;
+  }
+
+  .invoice-a4-scaled,
+  .invoice-screen-preview {
+    display: none !important;
   }
 }

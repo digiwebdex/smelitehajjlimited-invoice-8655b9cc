@@ -8,6 +8,7 @@ import { useCompany } from "@/hooks/useCompanies";
 import { useTheme } from "@/hooks/useTheme";
 import { useBranding } from "@/hooks/useBranding";
 import { ThemedInvoiceDocument } from "@/components/invoice/ThemedInvoiceDocument";
+import { InvoiceA4Preview } from "@/components/invoice/InvoiceA4Preview";
 import {
   renderAndDownloadInvoicePdf,
   renderInvoicePdfBlob,
@@ -150,22 +151,24 @@ export default function InvoicePreviewCompare() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        <div className="max-w-[1600px] mx-auto mb-4 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/invoices/${id}`)}>
+        <div className="max-w-[1600px] mx-auto mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(`/invoices/${id}`)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{invoice!.invoice_number}</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-foreground truncate sm:text-xl">{invoice!.invoice_number}</h1>
               <p className="text-sm text-muted-foreground">PDF vs Print — side-by-side preview</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleDownload}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="sm:size-default" onClick={handleDownload}>
               <FileDown className="h-4 w-4 mr-2" /> Download PDF
             </Button>
             <Button
               variant="outline"
+              size="sm"
+              className="sm:size-default"
               onClick={() => printRef.current && printInvoiceFromNode(printRef.current)}
             >
               <Printer className="h-4 w-4 mr-2" /> Print
@@ -174,12 +177,11 @@ export default function InvoicePreviewCompare() {
         </div>
 
         <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left: real PDF rendered as blob */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <div className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2">
               PDF Output
             </div>
-            <div className="bg-white rounded-xl shadow-lg border overflow-hidden h-[80vh] flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-lg border overflow-hidden h-[70vh] sm:h-[80vh] flex items-center justify-center">
               {pdfLoading && (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -199,33 +201,40 @@ export default function InvoicePreviewCompare() {
             </div>
           </div>
 
-          {/* Right: print-ready preview (same layout used for browser print) */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <div className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2">
               Browser Print Preview
             </div>
-            <div className="bg-neutral-100 rounded-xl border h-[80vh] overflow-auto p-4 flex justify-center">
-              <div
-                ref={printRef}
-                className="invoice-print-area bg-white shadow-lg"
-                style={{ width: "794px", flexShrink: 0 }}
-              >
-                <ThemedInvoiceDocument
-                  invoice={invoiceData}
-                  items={items}
-                  installments={installments}
-                  company={companyData}
-                  theme={activeTheme}
-                  branding={branding}
-                  pdfMode
-                />
-              </div>
+            <div className="bg-neutral-100 rounded-xl border h-[70vh] sm:h-[80vh] overflow-auto p-3 sm:p-4">
+              <InvoiceA4Preview
+                invoice={invoiceData}
+                items={items}
+                installments={installments}
+                company={companyData}
+                theme={activeTheme}
+                branding={branding}
+                pdfMode
+              />
             </div>
           </div>
         </div>
 
-        <p className="max-w-[1600px] mx-auto text-xs text-muted-foreground mt-3 text-center">
-          Both panels use the same A4 template and signature layout — left is the actual PDF blob, right is the print-ready DOM.
+        <div className="absolute -left-[10000px] top-0 w-[210mm] overflow-hidden" aria-hidden>
+          <div ref={printRef} className="invoice-print-area bg-white">
+            <ThemedInvoiceDocument
+              invoice={invoiceData}
+              items={items}
+              installments={installments}
+              company={companyData}
+              theme={activeTheme}
+              branding={branding}
+              pdfMode
+            />
+          </div>
+        </div>
+
+        <p className="max-w-[1600px] mx-auto text-xs text-muted-foreground mt-3 text-center px-2">
+          Both panels use the same A4 template — left is the PDF blob, right is the scaled print-ready preview.
         </p>
       </div>
     </AppLayout>

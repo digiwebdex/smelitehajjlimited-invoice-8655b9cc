@@ -330,7 +330,7 @@ export default function Invoices() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-[150px] justify-start text-left font-normal",
+                      "w-full sm:w-[150px] justify-start text-left font-normal",
                       !startDate && "text-muted-foreground"
                     )}
                   >
@@ -354,7 +354,7 @@ export default function Invoices() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-[150px] justify-start text-left font-normal",
+                      "w-full sm:w-[150px] justify-start text-left font-normal",
                       !endDate && "text-muted-foreground"
                     )}
                   >
@@ -567,18 +567,19 @@ export default function Invoices() {
                       </div>
                       {getStatusBadge(invoice.status)}
                     </div>
-                    <div className="flex items-center justify-between text-sm pl-12">
-                      <span className="text-muted-foreground">
+                    <div className="flex flex-col gap-2 pl-12 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="text-sm text-muted-foreground truncate">
                         {invoice.client_name} • {formatDate(invoice.invoice_date)}
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 sm:justify-end">
                         <span className="font-semibold text-foreground">
                           {formatCurrency(Number(invoice.total_amount))}
                         </span>
+                        <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
                           onClick={() => navigate(`/invoices/${invoice.id}`)}
                           title="View Invoice"
                         >
@@ -587,7 +588,7 @@ export default function Invoices() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
                           onClick={() => handleDownloadPdf(invoice.id)}
                           disabled={downloadingId === invoice.id}
                           title="Download PDF"
@@ -601,7 +602,7 @@ export default function Invoices() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-accent"
+                          className="h-8 w-8 text-muted-foreground hover:text-accent"
                           onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
                           title="Edit Invoice"
                         >
@@ -612,7 +613,7 @@ export default function Invoices() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
                               title="Delete Invoice"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -636,6 +637,7 @@ export default function Invoices() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        </div>
                       </div>
                     </div>
                   </div>

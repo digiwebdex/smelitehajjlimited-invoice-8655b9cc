@@ -157,7 +157,7 @@ export default function Dashboard() {
       <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -228,11 +228,15 @@ export default function Dashboard() {
                 <Clock className="h-4 w-4 text-yellow-500" />
                 Pending
               </div>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-yellow-600">{partialInvoices}</p>
-                <span className="text-sm text-muted-foreground">partial</span>
-                <p className="text-2xl font-bold text-red-600">{unpaidInvoices}</p>
-                <span className="text-sm text-muted-foreground">unpaid</span>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-bold text-yellow-600">{partialInvoices}</p>
+                  <span className="text-sm text-muted-foreground">partial</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-bold text-red-600">{unpaidInvoices}</p>
+                  <span className="text-sm text-muted-foreground">unpaid</span>
+                </div>
               </div>
             </div>
           </div>

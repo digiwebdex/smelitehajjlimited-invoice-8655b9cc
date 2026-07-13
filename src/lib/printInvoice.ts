@@ -50,10 +50,13 @@ export function printInvoiceFromNode(node: HTMLElement): void {
         position: static !important;
         width: 210mm !important;
         min-height: 297mm !important;
-        max-width: none !important;
+        max-width: 210mm !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
       }
       .invoice-print-area .invoice-document {
         width: 210mm !important;
@@ -61,6 +64,7 @@ export function printInvoiceFromNode(node: HTMLElement): void {
         max-width: 210mm !important;
         box-shadow: none !important;
         border-radius: 0 !important;
+        transform: none !important;
       }
       .invoice-items tr,
       .invoice-row,

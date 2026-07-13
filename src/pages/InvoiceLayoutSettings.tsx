@@ -22,7 +22,7 @@ import {
 } from "@/hooks/useInvoiceLayout";
 import { defaultInvoiceLayout, InvoiceLayout, mergeLayout } from "@/types/invoiceLayout";
 import { defaultTheme } from "@/types/theme";
-import { ThemedInvoiceDocument } from "@/components/invoice/ThemedInvoiceDocument";
+import { InvoiceA4Preview } from "@/components/invoice/InvoiceA4Preview";
 
 const sampleInvoice = {
   id: "preview",
@@ -121,9 +121,9 @@ export default function InvoiceLayoutSettings() {
             <h1 className="text-2xl font-bold">Invoice Layout CMS</h1>
             <p className="text-muted-foreground">Control every visual aspect of the invoice document</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Select value={scope} onValueChange={setScope}>
-              <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[260px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="global">Global Defaults</SelectItem>
                 {companies?.map((c: any) => (
@@ -131,14 +131,16 @@ export default function InvoiceLayoutSettings() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={handleReset}>
+            <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 sm:flex-none" onClick={handleReset}>
               <RotateCcw className="mr-2 h-4 w-4" />
               {scope === "global" ? "Reset Form" : "Clear Override"}
             </Button>
-            <Button onClick={handleSave} disabled={updateGlobal.isPending || updateCompany.isPending}>
+            <Button className="flex-1 sm:flex-none" onClick={handleSave} disabled={updateGlobal.isPending || updateCompany.isPending}>
               {(updateGlobal.isPending || updateCompany.isPending) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save
             </Button>
+            </div>
           </div>
         </div>
 
@@ -268,17 +270,15 @@ export default function InvoiceLayoutSettings() {
                 <CardDescription>Sample invoice updates as you tweak controls</CardDescription>
               </CardHeader>
               <CardContent className="bg-neutral-100 p-3 max-h-[80vh] overflow-auto">
-                <div className="bg-white shadow mx-auto" style={{ width: "794px", transform: "scale(0.7)", transformOrigin: "top left" }}>
-                  <ThemedInvoiceDocument
-                    invoice={sampleInvoice as any}
-                    items={sampleItems}
-                    installments={sampleInstallments}
-                    company={null}
-                    theme={theme || defaultTheme}
-                    branding={branding}
-                    layout={form}
-                  />
-                </div>
+                <InvoiceA4Preview
+                  invoice={sampleInvoice as any}
+                  items={sampleItems}
+                  installments={sampleInstallments}
+                  company={null}
+                  theme={theme || defaultTheme}
+                  branding={branding}
+                  layout={form}
+                />
               </CardContent>
             </Card>
           </div>

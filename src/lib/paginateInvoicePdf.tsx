@@ -255,8 +255,10 @@ const renderInvoicePage = (
       style={{
         width: "210mm",
         minHeight: "297mm",
+        height: "297mm",
         background: "#ffffff",
         overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <ThemedInvoiceDocument
@@ -335,13 +337,18 @@ export async function generatePaginatedInvoicePdf(
       pdf.addPage();
     }
 
+    // Place image at true aspect ratio inside A4 — never stretch short pages.
+    const imgWidthMm = A4_WIDTH_MM;
+    const imgHeightMm = (canvas.height / canvas.width) * A4_WIDTH_MM;
+    const drawHeightMm = Math.min(imgHeightMm, A4_HEIGHT_MM);
+
     pdf.addImage(
       canvas.toDataURL("image/jpeg", 0.98),
       "JPEG",
       0,
       0,
-      A4_WIDTH_MM,
-      A4_HEIGHT_MM,
+      imgWidthMm,
+      drawHeightMm,
       undefined,
       "FAST"
     );

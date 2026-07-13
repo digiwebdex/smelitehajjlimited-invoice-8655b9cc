@@ -8,6 +8,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useBranding } from "@/hooks/useBranding";
 import { useEffectiveInvoiceLayout } from "@/hooks/useInvoiceLayout";
 import { ThemedInvoiceDocument } from "@/components/invoice/ThemedInvoiceDocument";
+import { InvoiceA4Preview } from "@/components/invoice/InvoiceA4Preview";
 import { renderAndDownloadInvoicePdf } from "@/lib/renderAndDownloadInvoicePdf";
 import { printInvoiceFromNode } from "@/lib/printInvoice";
 import { defaultTheme } from "@/types/theme";
@@ -136,26 +137,36 @@ export default function PublicInvoiceView() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 print:bg-white print:py-0 print:px-0">
       {/* Action Buttons - Hidden on Print */}
-      <div className="max-w-4xl mx-auto mb-6 flex justify-end gap-3 print:hidden">
-        <Button variant="outline" onClick={handleDownloadPdf}>
+      <div className="max-w-4xl mx-auto mb-4 flex flex-wrap justify-end gap-2 print:hidden sm:mb-6 sm:gap-3">
+        <Button variant="outline" size="sm" className="sm:size-default" onClick={handleDownloadPdf}>
           <FileDown className="h-4 w-4 mr-2" />
-          Download Invoice
+          Download
         </Button>
         <Button
           variant="outline"
+          size="sm"
+          className="sm:size-default"
           onClick={() => printRef.current && printInvoiceFromNode(printRef.current)}
         >
           <Printer className="h-4 w-4 mr-2" />
-          Print Invoice
+          Print
         </Button>
       </div>
 
-      {/* On-screen preview card. Print/PDF use clean A4 templates. */}
-      <div className="max-w-4xl mx-auto">
-        <div
-          ref={printRef}
-          className="invoice-print-area bg-white rounded-xl shadow-lg overflow-hidden"
-        >
+      <div className="mx-auto w-full max-w-4xl">
+        <InvoiceA4Preview
+          invoice={invoiceData}
+          items={items}
+          installments={installments}
+          company={companyData}
+          theme={activeTheme}
+          branding={branding}
+          layout={invoiceLayout}
+        />
+      </div>
+
+      <div className="absolute -left-[10000px] top-0 w-[210mm] overflow-hidden" aria-hidden>
+        <div ref={printRef} className="invoice-print-area bg-white">
           <ThemedInvoiceDocument
             invoice={invoiceData}
             items={items}

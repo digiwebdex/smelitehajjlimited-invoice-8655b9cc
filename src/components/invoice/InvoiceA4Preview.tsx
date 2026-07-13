@@ -9,9 +9,14 @@ interface InvoiceA4PreviewProps extends ThemedInvoiceDocumentProps {
   sheetClassName?: string;
 }
 
+/** Approximate CSS px for 210mm / 297mm at 96dpi */
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 
+/**
+ * Scales a true A4 invoice sheet to fit the viewport width.
+ * Does NOT use invoice-print-area — keep print/PDF hosts separate.
+ */
 export function InvoiceA4Preview({
   className,
   sheetClassName,
@@ -27,7 +32,7 @@ export function InvoiceA4Preview({
     if (!viewport) return;
 
     const updateScale = () => {
-      const availableWidth = Math.max(320, viewport.clientWidth - 2);
+      const availableWidth = Math.max(280, viewport.clientWidth);
       setScale(Math.min(1, availableWidth / A4_WIDTH_PX));
     };
 
@@ -38,17 +43,22 @@ export function InvoiceA4Preview({
   }, []);
 
   useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
     const measure = () => {
-      const nextHeight = sheetRef.current?.scrollHeight || A4_HEIGHT_PX;
+      const nextHeight = sheet.scrollHeight || A4_HEIGHT_PX;
       setSheetHeight(Math.max(A4_HEIGHT_PX, nextHeight));
     };
 
-    const frame = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(frame);
-  });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(sheet);
+    return () => observer.disconnect();
+  }, [documentProps.invoice, documentProps.items, documentProps.installments, documentProps.theme, documentProps.layout]);
 
   return (
-    <div ref={viewportRef} className={cn("overflow-auto", className)}>
+    <div ref={viewportRef} className={cn("invoice-a4-scaled w-full overflow-x-hidden", className)}>
       <div
         className="mx-auto"
         style={{
@@ -58,13 +68,15 @@ export function InvoiceA4Preview({
       >
         <div
           ref={sheetRef}
-          className={cn("invoice-print-area bg-white shadow-lg", sheetClassName)}
-          style={{
-            width: A4_WIDTH_PX,
-            minHeight: A4_HEIGHT_PX,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-          } as CSSProperties}
+          className={cn("invoice-screen-preview bg-white shadow-lg rounded-lg", sheetClassName)}
+          style={
+            {
+              width: A4_WIDTH_PX,
+              minHeight: A4_HEIGHT_PX,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            } as CSSProperties
+          }
         >
           <ThemedInvoiceDocument {...documentProps} />
         </div>

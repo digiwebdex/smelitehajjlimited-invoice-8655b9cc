@@ -340,8 +340,8 @@
     print-color-adjust: exact !important;
   }
 
-  /* Hide every node by default — the print-host iframe approach is
-     used by the buttons, but this is a safe fallback for Ctrl+P. */
+  /* Hide every node by default — iframe print path is preferred;
+     this is a safe fallback for Ctrl+P on invoice pages. */
   body * {
     visibility: hidden !important;
   }
@@ -351,8 +351,12 @@
     visibility: visible !important;
   }
 
-  /* Strip ancestor layout (sidebar, padding, min-heights) */
-  body, #root, [data-sidebar-wrapper], main, .min-h-screen {
+  body,
+  #root,
+  main,
+  .min-h-screen,
+  [data-sidebar],
+  .group\/sidebar-wrapper {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -374,18 +378,25 @@
     box-shadow: none !important;
     border: 0 !important;
     border-radius: 0 !important;
+    transform: none !important;
   }
 
-  /* Strip on-screen card chrome from the document */
   .invoice-print-area .invoice-document,
   .invoice-sample-document {
     width: 210mm !important;
     min-height: 297mm !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     border: 0 !important;
+    transform: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .invoice-a4-scaled,
+  .invoice-screen-preview {
+    display: none !important;
   }
 
   .invoice-print-payment-history {
@@ -393,8 +404,6 @@
     border-radius: 8px !important;
   }
 
-
-  /* Items table: header repeats, rows never split */
   .invoice-items thead { display: table-header-group !important; }
   .invoice-items tfoot { display: table-footer-group !important; }
   .invoice-items tr,
@@ -409,11 +418,13 @@
     page-break-inside: avoid !important;
   }
 
-  /* Hide app shell controls */
   .no-print,
-  nav, aside,
+  nav,
+  aside,
+  header,
   [data-sidebar],
-  [data-sidebar-wrapper] {
+  [data-sidebar-wrapper],
+  .group\/sidebar-wrapper > aside {
     display: none !important;
   }
 }

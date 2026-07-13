@@ -81,7 +81,7 @@ export default function Login() {
             alt="SM Elite Hajj Logo" 
             className="h-20 w-20 rounded-2xl shadow-lg mb-4 object-cover"
           />
-          <h1 className="text-2xl font-bold text-foreground">S M Invoice Software</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">S M Invoice Software</h1>
           <p className="text-sm text-muted-foreground mt-1">Invoice Management System</p>
         </div>
 
