@@ -553,7 +553,7 @@ export const ThemedInvoiceDocument = ({
         className="invoice-totals invoice-print-summary invoice-keep-together"
         style={{ display: "flex", justifyContent: "flex-end", marginBottom: "3mm" }}
       >
-        <div style={{ width: "58mm", fontSize: "10pt" }}>
+        <div style={{ width: "72mm", minWidth: "72mm", fontSize: "10pt" }}>
           {[
             { label: "Subtotal", value: subtotal, bold: false, color: C.text, show: L.body.showSubtotal },
             { label: L.body.vatLabel, value: vatAmount, bold: false, color: C.text, show: L.body.showVat },
@@ -567,13 +567,23 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
+                  alignItems: "center",
                   gap: "4mm",
                   padding: "5px 0",
                   borderBottom: `1px solid ${C.border}`,
                 }}
               >
-                <span style={{ color: C.text, fontWeight: row.bold ? 800 : 500 }}>{row.label}</span>
-                <span style={{ color: row.color, fontWeight: row.bold ? 800 : 600 }}>
+                <span style={{ color: C.text, fontWeight: row.bold ? 800 : 500, whiteSpace: "nowrap" }}>
+                  {row.label}
+                </span>
+                <span
+                  style={{
+                    color: row.color,
+                    fontWeight: row.bold ? 800 : 600,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
                   {formatCurrency(row.value)}
                 </span>
               </div>
@@ -584,6 +594,7 @@ export const ThemedInvoiceDocument = ({
               style={{
                 display: "flex",
                 justifyContent: "space-between",
+                alignItems: "center",
                 gap: "4mm",
                 padding: "7px 10px",
                 marginTop: "6px",
@@ -596,8 +607,12 @@ export const ThemedInvoiceDocument = ({
                 printColorAdjust: "exact",
               }}
             >
-              <span>{dueAmount > 0 ? "Balance Due" : "Paid in Full"}</span>
-              <span>{formatCurrency(dueAmount)}</span>
+              <span style={{ whiteSpace: "nowrap" }}>
+                {dueAmount > 0 ? "Balance Due" : "Paid in Full"}
+              </span>
+              <span style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                {formatCurrency(dueAmount)}
+              </span>
             </div>
           )}
         </div>
