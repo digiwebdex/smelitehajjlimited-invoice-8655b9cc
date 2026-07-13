@@ -65,6 +65,8 @@ export function printInvoiceFromNode(node: HTMLElement): void {
         box-shadow: none !important;
         border-radius: 0 !important;
         transform: none !important;
+        box-sizing: border-box !important;
+        padding-bottom: 16mm !important;
       }
       .invoice-items tr,
       .invoice-row,

@@ -12,6 +12,12 @@ import { InvoiceLayout } from "@/types/invoiceLayout";
 const PDF_SCALE = 2;
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
+/** Extra space kept clear at the bottom of content-only pages (page 1 table overflow). */
+const PAGE_BOTTOM_SAFE_MM = 16;
+/** Table margin-bottom in ThemedInvoiceDocument (not included in row offsetHeight). */
+const TABLE_BOTTOM_MARGIN_MM = 4;
+
+const mmToPx = (mm: number, pageHeightPx: number) => (mm / A4_HEIGHT_MM) * pageHeightPx;
 
 export interface InvoicePdfRenderArgs {
   invoice: any;
@@ -119,9 +125,17 @@ const buildPagePlans = (
   let pageNumber = 0;
 
   while (rowIndex < allItems.length) {
-    let budget = pageHeightPx - measurements.docPadding - measurements.thead;
+    let budget =
+      pageHeightPx -
+      measurements.docPadding -
+      measurements.thead -
+      mmToPx(PAGE_BOTTOM_SAFE_MM + TABLE_BOTTOM_MARGIN_MM, pageHeightPx);
+
     if (pageNumber === 0) {
       budget -= measurements.header + measurements.billTo;
+    } else {
+      // "Page N — continued" label on continuation pages
+      budget -= mmToPx(8, pageHeightPx);
     }
 
     const remainingHeights = measurements.rowHeights.slice(rowIndex);

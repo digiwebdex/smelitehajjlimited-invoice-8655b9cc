@@ -200,7 +200,7 @@ export const ThemedInvoiceDocument = ({
       ? { background: C.redBg, color: C.partial }
       : { background: C.redBg, color: C.red };
 
-  const pagePadding = `${L.header.paddingTop}mm ${L.header.paddingX}mm 12mm`;
+  const pagePadding = `${L.header.paddingTop}mm ${L.header.paddingX}mm ${pdfMode ? 16 : 14}mm`;
 
   return (
     <div
