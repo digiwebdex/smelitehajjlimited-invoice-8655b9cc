@@ -1,58 +1,34 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, DollarSign, FileText, TrendingUp } from "lucide-react";
+import { ArrowLeft, Building2, DollarSign, FileText, TrendingUp, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { mockCompanies, mockInvoices } from "@/data/mockData";
+import { useCompany } from "@/hooks/useCompanies";
+import { useInvoices } from "@/hooks/useInvoices";
 import { cn } from "@/lib/utils";
 
 export default function CompanyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const company = mockCompanies.find((c) => c.id === id);
-  const companyInvoices = mockInvoices.filter((inv) => inv.companyId === id);
+  const { data: company, isLoading: companyLoading } = useCompany(id);
+  const { data: invoices = [], isLoading: invoicesLoading } = useInvoices();
 
-  if (!company) {
-    return (
-      <AppLayout>
-        <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-foreground">
-            Company not found
-          </h2>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => navigate("/companies")}
-          >
-            Back to Companies
-          </Button>
-        </div>
-      </AppLayout>
-    );
-  }
+  const companyInvoices = invoices.filter((inv) => inv.company_id === id);
+  const isLoading = companyLoading || invoicesLoading;
 
-  const totalRevenue = companyInvoices.reduce(
-    (sum, inv) => sum + inv.paidAmount,
-    0
-  );
-  const totalDue = companyInvoices.reduce((sum, inv) => sum + inv.dueAmount, 0);
-  const totalInvoices = companyInvoices.length;
-
-  const formatCurrency = (amount: number) => {
-    return `৳${new Intl.NumberFormat("en-BD", {
+  const formatCurrency = (amount: number) =>
+    `৳${new Intl.NumberFormat("en-BD", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount)}`;
-  };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
-  };
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -72,17 +48,38 @@ export default function CompanyDetail() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!company) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-foreground">Company not found</h2>
+          <Button variant="outline" className="mt-4" onClick={() => navigate("/companies")}>
+            Back to Companies
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const totalRevenue = companyInvoices.reduce((sum, inv) => sum + Number(inv.paid_amount), 0);
+  const totalDue = companyInvoices.reduce((sum, inv) => sum + Number(inv.due_amount), 0);
+  const totalInvoices = companyInvoices.length;
+
   return (
     <AppLayout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-4">
@@ -90,15 +87,12 @@ export default function CompanyDetail() {
               <Building2 className="h-7 w-7 text-accent" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {company.name}
-              </h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">{company.name}</h1>
               <p className="text-muted-foreground">Income Statement</p>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-6 md:grid-cols-3">
           <StatCard
             title="Total Revenue"
@@ -123,20 +117,15 @@ export default function CompanyDetail() {
           />
         </div>
 
-        {/* Invoice List */}
         <div className="card-elevated">
           <div className="p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">
-              Invoice History
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">Invoice History</h2>
           </div>
           <div className="divide-y divide-border">
             {companyInvoices.length === 0 ? (
               <div className="p-8 text-center">
                 <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  No invoices for this company yet.
-                </p>
+                <p className="text-muted-foreground">No invoices for this company yet.</p>
               </div>
             ) : (
               companyInvoices.map((invoice) => (
@@ -150,21 +139,19 @@ export default function CompanyDetail() {
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">
-                        {invoice.invoiceNumber}
-                      </p>
+                      <p className="font-medium text-foreground">{invoice.invoice_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {invoice.clientName} • {formatDate(invoice.date)}
+                        {invoice.client_name} • {formatDate(invoice.invoice_date)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 sm:ml-auto">
                     <div className="text-right">
                       <p className="font-semibold text-foreground">
-                        {formatCurrency(invoice.totalAmount)}
+                        {formatCurrency(Number(invoice.total_amount))}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Paid: {formatCurrency(invoice.paidAmount)}
+                        Paid: {formatCurrency(Number(invoice.paid_amount))}
                       </p>
                     </div>
                     {getStatusBadge(invoice.status)}

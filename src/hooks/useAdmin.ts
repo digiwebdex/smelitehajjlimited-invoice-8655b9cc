@@ -29,20 +29,10 @@ export function useAdmin() {
   const queryClient = useQueryClient();
 
   const { data: accessState, isLoading: isCheckingAccess } = useQuery({
-    queryKey: ["accessState", user?.id, user?.is_admin, user?.is_approved],
+    queryKey: ["accessState", user?.id],
     queryFn: async (): Promise<AccessState> => {
       if (!user?.id) {
         return { is_admin: false, is_approved: false };
-      }
-
-      const hasStoredAdmin = typeof user.is_admin === "boolean";
-      const hasStoredApproval = typeof user.is_approved === "boolean";
-
-      if (hasStoredAdmin || hasStoredApproval) {
-        return {
-          is_admin: Boolean(user.is_admin),
-          is_approved: Boolean(user.is_approved),
-        };
       }
 
       const profileResult = await api.get<ProfileWithAccess>("/auth/profile");
@@ -69,6 +59,7 @@ export function useAdmin() {
       };
     },
     enabled: !!user?.id,
+    staleTime: 30_000,
   });
 
   const isAdmin = accessState?.is_admin ?? false;

@@ -20,15 +20,14 @@ export default function Login() {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [authErrorCode, setAuthErrorCode] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
 
-  const { login, signup, resendConfirmationEmail, resetPassword } = useAuth();
+  const { login, signup, resetPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/";
 
-  const isEmailNotConfirmed = authErrorCode === "email_not_confirmed";
+  const isPendingApproval = authErrorCode === "pending_approval";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +39,9 @@ export default function Login() {
     if (isForgotPassword) {
       const result = await resetPassword(email);
       if (result.success) {
-        setSuccess("Password reset email sent! Check your inbox for the reset link.");
+        setSuccess(result.message || "Contact your administrator to reset your password.");
       } else {
-        setError(result.error || "Failed to send reset email");
+        setError(result.error || "Could not process request");
       }
     } else if (isSignUp) {
       const passwordError = validatePassword(password);
@@ -53,7 +52,7 @@ export default function Login() {
       }
       const result = await signup(email, password, fullName);
       if (result.success) {
-        setSuccess("Account created! Please check your email to verify your account before signing in.");
+        setSuccess("Account created! Your account is awaiting admin approval before you can sign in.");
         setIsSignUp(false);
         setPassword("");
       } else {
@@ -70,21 +69,6 @@ export default function Login() {
     }
 
     setIsLoading(false);
-  };
-
-  const handleResendVerification = async () => {
-    if (!email) return;
-
-    setError("");
-    setSuccess("");
-    setIsResending(true);
-    const result = await resendConfirmationEmail(email);
-    if (result.success) {
-      setSuccess("Verification email sent. Please check your inbox (and spam/junk).");
-    } else {
-      setError(result.error || "Could not resend verification email");
-    }
-    setIsResending(false);
   };
 
   return (
@@ -122,28 +106,10 @@ export default function Login() {
                 </Alert>
               )}
 
-              {error && isEmailNotConfirmed && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    This account must be verified before you can sign in.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleResendVerification}
-                    disabled={isLoading || isResending || !email}
-                  >
-                    {isResending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending verification email...
-                      </>
-                    ) : (
-                      "Resend verification email"
-                    )}
-                  </Button>
-                </div>
+              {error && isPendingApproval && (
+                <p className="text-xs text-muted-foreground">
+                  Your account must be approved by an administrator before you can sign in.
+                </p>
               )}
 
               {success && (

@@ -70,7 +70,7 @@ export const generateInvoicePdf = async (
 
   const headerName = company?.name || b.company_name || "Company Name";
   const headerTagline = company?.tagline || b.tagline;
-  const headerLogo = company?.logo || b.company_logo;
+  const headerLogo = company?.logo_url || b.company_logo;
   const {
     footerLines,
     footerThankYou: thankYouText,

@@ -763,6 +763,9 @@ app.patch('/api/invoices/:id/quick-edit', authenticate, requireApproved, async (
        WHERE id=$6 AND user_id=$7 RETURNING *`,
       [client_name, client_email, client_phone, client_address, notes, req.params.id, req.user.id]
     );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
     res.json({ data: rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });

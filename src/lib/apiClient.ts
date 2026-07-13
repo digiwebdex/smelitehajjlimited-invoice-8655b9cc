@@ -21,7 +21,13 @@ export function clearToken() {
 
 export function getStoredUser() {
   const user = localStorage.getItem("auth_user");
-  return user ? JSON.parse(user) : null;
+  if (!user) return null;
+  try {
+    return JSON.parse(user);
+  } catch {
+    localStorage.removeItem("auth_user");
+    return null;
+  }
 }
 
 export function setStoredUser(user: any) {

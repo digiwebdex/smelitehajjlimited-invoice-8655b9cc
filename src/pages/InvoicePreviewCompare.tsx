@@ -94,9 +94,10 @@ export default function InvoicePreviewCompare() {
 
   useEffect(() => {
     if (!dataReady || !invoiceData) return;
+
     let cancelled = false;
-    let activeUrl: string | null = null;
     setPdfLoading(true);
+
     renderInvoicePdfBlob({
       invoice: invoiceData,
       items,
@@ -107,18 +108,23 @@ export default function InvoicePreviewCompare() {
     })
       .then((blob) => {
         if (cancelled) return;
-        activeUrl = URL.createObjectURL(blob);
-        setPdfUrl(activeUrl);
+        setPdfUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
       })
       .finally(() => {
         if (!cancelled) setPdfLoading(false);
       });
+
     return () => {
       cancelled = true;
-      if (activeUrl) URL.revokeObjectURL(activeUrl);
+      setPdfUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataReady, invoice?.id]);
+  }, [dataReady, invoiceData, items, installments, companyData, activeTheme, branding]);
 
   if (!dataReady || !invoiceData) {
     return (

@@ -11,20 +11,23 @@ const getOrdinal = (n: number): string => {
   return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
 };
 
-const SAMPLE = {
-  blue: "#243f8f",
-  orange: "#f97316",
-  teal: "#0f8b7e",
-  green: "#166534",
-  greenBg: "#dcfce7",
-  paidFullBg: "#166f36",
-  paidFullText: "#ffffff",
-  red: "#b91c1c",
-  redBg: "#fee2e2",
-  text: "#111827",
-  muted: "#6b7280",
-  border: "#e5e7eb",
-};
+const invoiceColors = (theme: ThemeSettings) => ({
+  blue: theme.primary_color,
+  orange: theme.invoice_title_color,
+  teal: theme.accent_color,
+  green: theme.badge_paid_color,
+  greenBg: theme.secondary_color,
+  paidFullBg: theme.balance_bg_color,
+  paidFullText: theme.balance_text_color,
+  red: theme.badge_unpaid_color,
+  redBg: theme.secondary_color,
+  partial: theme.badge_partial_color,
+  text: theme.subtotal_text_color,
+  muted: theme.footer_text_color,
+  border: theme.border_color,
+  tableHeaderBg: theme.table_header_bg,
+  tableHeaderText: theme.table_header_text,
+});
 
 interface InvoiceItemData {
   id: string;
@@ -142,7 +145,8 @@ export const ThemedInvoiceDocument = ({
   pageSlice,
   pageLabel,
 }: ThemedInvoiceDocumentProps) => {
-  theme || defaultTheme;
+  const t = theme || defaultTheme;
+  const C = invoiceColors(t);
   const b = branding || defaultBranding;
   const L = layout || defaultInvoiceLayout;
 
@@ -191,10 +195,10 @@ export const ThemedInvoiceDocument = ({
   const isPartial = status === "partial";
 
   const statusStyle = isPaid
-    ? { background: SAMPLE.greenBg, color: SAMPLE.green }
+    ? { background: C.greenBg, color: C.green }
     : isPartial
-      ? { background: "#fef3c7", color: "#92400e" }
-      : { background: SAMPLE.redBg, color: SAMPLE.red };
+      ? { background: C.redBg, color: C.partial }
+      : { background: C.redBg, color: C.red };
 
   const pagePadding = `${L.header.paddingTop}mm ${L.header.paddingX}mm 12mm`;
 
@@ -207,7 +211,7 @@ export const ThemedInvoiceDocument = ({
         margin: "0 auto",
         padding: pagePadding,
         boxSizing: "border-box",
-        color: SAMPLE.text,
+        color: C.text,
         background: "#ffffff",
         fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: `${L.typography.baseFontSize}pt`,
@@ -224,7 +228,7 @@ export const ThemedInvoiceDocument = ({
         <div
           style={{
             fontSize: "8pt",
-            color: SAMPLE.muted,
+            color: C.muted,
             textAlign: "right",
             marginBottom: "3mm",
             letterSpacing: "0.04em",
@@ -256,7 +260,7 @@ export const ThemedInvoiceDocument = ({
                 height: `${L.header.logoSize}px`,
                 borderRadius: "50%",
                 objectFit: "cover",
-                border: `1.2px solid ${SAMPLE.blue}`,
+                border: `1.2px solid ${C.blue}`,
                 flexShrink: 0,
               }}
             />
@@ -266,7 +270,7 @@ export const ThemedInvoiceDocument = ({
                 width: `${L.header.logoSize}px`,
                 height: `${L.header.logoSize}px`,
                 borderRadius: "50%",
-                background: SAMPLE.blue,
+                background: C.blue,
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -286,7 +290,7 @@ export const ThemedInvoiceDocument = ({
                 fontSize: `${L.header.companyNameSize}pt`,
                 lineHeight: 1.1,
                 fontWeight: 800,
-                color: SAMPLE.blue,
+                color: C.blue,
                 letterSpacing: "-0.2px",
               }}
             >
@@ -296,7 +300,7 @@ export const ThemedInvoiceDocument = ({
               <div
                 style={{
                   fontSize: "9pt",
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   marginTop: "2px",
                   fontStyle: "italic",
                 }}
@@ -313,7 +317,7 @@ export const ThemedInvoiceDocument = ({
               fontSize: `${L.header.titleSize * L.typography.headingScale}pt`,
               lineHeight: 1,
               fontWeight: 800,
-              color: SAMPLE.blue,
+              color: C.blue,
               letterSpacing: "0.5px",
             }}
           >
@@ -323,7 +327,7 @@ export const ThemedInvoiceDocument = ({
             <div
               style={{
                 fontSize: "12pt",
-                color: SAMPLE.orange,
+                color: C.orange,
                 fontWeight: 800,
                 marginTop: "4px",
               }}
@@ -355,18 +359,18 @@ export const ThemedInvoiceDocument = ({
             gridTemplateColumns: "1fr auto",
             columnGap: "8mm",
             alignItems: "start",
-            borderTop: `1px solid ${SAMPLE.border}`,
+            borderTop: `1px solid ${C.border}`,
             paddingTop: "5mm",
             marginBottom: `${L.body.sectionGap}mm`,
           }}
         >
           {L.body.showBilledTo && (
-            <div style={{ borderLeft: `4px solid ${SAMPLE.teal}`, paddingLeft: "4mm" }}>
+            <div style={{ borderLeft: `4px solid ${C.teal}`, paddingLeft: "4mm" }}>
               <div
                 style={{
                   fontSize: "8pt",
                   fontWeight: 600,
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   textTransform: "uppercase",
                   letterSpacing: "0.4px",
                   marginBottom: "4px",
@@ -378,7 +382,7 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   fontSize: "14pt",
                   fontWeight: 800,
-                  color: SAMPLE.text,
+                  color: C.text,
                   textTransform: "uppercase",
                   lineHeight: 1.2,
                 }}
@@ -388,7 +392,7 @@ export const ThemedInvoiceDocument = ({
               {invoice.client_address && (
                 <div
                   style={{
-                    color: SAMPLE.muted,
+                    color: C.muted,
                     marginTop: "3px",
                     whiteSpace: "pre-line",
                     maxWidth: "100mm",
@@ -401,12 +405,12 @@ export const ThemedInvoiceDocument = ({
                 </div>
               )}
               {invoice.client_phone && (
-                <div style={{ color: SAMPLE.muted, marginTop: "2px", fontSize: "8.5pt" }}>
+                <div style={{ color: C.muted, marginTop: "2px", fontSize: "8.5pt" }}>
                   {invoice.client_phone}
                 </div>
               )}
               {invoice.client_email && (
-                <div style={{ color: SAMPLE.muted, marginTop: "2px", fontSize: "8.5pt" }}>
+                <div style={{ color: C.muted, marginTop: "2px", fontSize: "8.5pt" }}>
                   {invoice.client_email}
                 </div>
               )}
@@ -422,10 +426,10 @@ export const ThemedInvoiceDocument = ({
                 paddingTop: "1mm",
               }}
             >
-              <span style={{ fontWeight: 700, color: SAMPLE.muted, textTransform: "uppercase" }}>
+              <span style={{ fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>
                 INVOICE DATE :{" "}
               </span>
-              <span style={{ fontWeight: 700, color: SAMPLE.text }}>
+              <span style={{ fontWeight: 700, color: C.text }}>
                 {formatDate(invoice.invoice_date)}
               </span>
             </div>
@@ -446,12 +450,12 @@ export const ThemedInvoiceDocument = ({
           {L.body.showAmount && <col style={{ width: `${L.body.colWidths.amount}%` }} />}
         </colgroup>
         <thead>
-          <tr style={{ borderBottom: `1px solid ${SAMPLE.border}` }}>
+          <tr style={{ borderBottom: `1px solid ${C.border}` }}>
             <th
               style={{
                 textAlign: "left",
                 padding: `${L.body.rowPaddingY}px 0`,
-                color: SAMPLE.muted,
+                color: C.muted,
                 fontSize: `${L.body.tableHeaderSize}pt`,
                 fontWeight: 700,
                 textTransform: "uppercase",
@@ -465,7 +469,7 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   textAlign: "center",
                   padding: `${L.body.rowPaddingY}px 0`,
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   fontSize: `${L.body.tableHeaderSize}pt`,
                   fontWeight: 700,
                   textTransform: "uppercase",
@@ -479,7 +483,7 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   textAlign: "right",
                   padding: `${L.body.rowPaddingY}px 0`,
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   fontSize: `${L.body.tableHeaderSize}pt`,
                   fontWeight: 700,
                   textTransform: "uppercase",
@@ -493,7 +497,7 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   textAlign: "right",
                   padding: `${L.body.rowPaddingY}px 0`,
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   fontSize: `${L.body.tableHeaderSize}pt`,
                   fontWeight: 700,
                   textTransform: "uppercase",
@@ -510,29 +514,29 @@ export const ThemedInvoiceDocument = ({
             const unitPrice = cleanNumber(item.unit_price ?? cleanNumber(item.amount) / qty);
             const total = cleanNumber(item.amount);
             return (
-              <tr key={item.id} className="invoice-row invoice-print-row" style={{ borderBottom: `1px solid ${SAMPLE.border}` }}>
+              <tr key={item.id} className="invoice-row invoice-print-row" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td
                   style={{
                     padding: `${L.body.rowPaddingY}px 0`,
                     fontWeight: 700,
                     textTransform: "uppercase",
-                    color: SAMPLE.text,
+                    color: C.text,
                   }}
                 >
                   {item.title}
                 </td>
                 {L.body.showQty && (
-                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "center", color: SAMPLE.text }}>
+                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "center", color: C.text }}>
                     {qty}
                   </td>
                 )}
                 {L.body.showUnitPrice && (
-                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "right", color: SAMPLE.text }}>
+                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "right", color: C.text }}>
                     {formatCurrency(unitPrice)}
                   </td>
                 )}
                 {L.body.showAmount && (
-                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "right", fontWeight: 700, color: SAMPLE.text }}>
+                  <td style={{ padding: `${L.body.rowPaddingY}px 0`, textAlign: "right", fontWeight: 700, color: C.text }}>
                     {formatCurrency(total)}
                   </td>
                 )}
@@ -551,10 +555,10 @@ export const ThemedInvoiceDocument = ({
       >
         <div style={{ width: "58mm", fontSize: "10pt" }}>
           {[
-            { label: "Subtotal", value: subtotal, bold: false, color: SAMPLE.text, show: L.body.showSubtotal },
-            { label: L.body.vatLabel, value: vatAmount, bold: false, color: SAMPLE.text, show: L.body.showVat },
-            { label: "Total", value: totalAmount, bold: true, color: SAMPLE.text, show: L.body.showTotal },
-            { label: "Total Paid", value: paidAmount, bold: false, color: SAMPLE.green, show: L.body.showPaid },
+            { label: "Subtotal", value: subtotal, bold: false, color: C.text, show: L.body.showSubtotal },
+            { label: L.body.vatLabel, value: vatAmount, bold: false, color: C.text, show: L.body.showVat },
+            { label: "Total", value: totalAmount, bold: true, color: C.text, show: L.body.showTotal },
+            { label: "Total Paid", value: paidAmount, bold: false, color: C.green, show: L.body.showPaid },
           ]
             .filter((row) => row.show)
             .map((row) => (
@@ -565,10 +569,10 @@ export const ThemedInvoiceDocument = ({
                   justifyContent: "space-between",
                   gap: "4mm",
                   padding: "5px 0",
-                  borderBottom: `1px solid ${SAMPLE.border}`,
+                  borderBottom: `1px solid ${C.border}`,
                 }}
               >
-                <span style={{ color: SAMPLE.text, fontWeight: row.bold ? 800 : 500 }}>{row.label}</span>
+                <span style={{ color: C.text, fontWeight: row.bold ? 800 : 500 }}>{row.label}</span>
                 <span style={{ color: row.color, fontWeight: row.bold ? 800 : 600 }}>
                   {formatCurrency(row.value)}
                 </span>
@@ -584,8 +588,8 @@ export const ThemedInvoiceDocument = ({
                 padding: "7px 10px",
                 marginTop: "6px",
                 borderRadius: "4px",
-                background: dueAmount > 0 ? SAMPLE.redBg : SAMPLE.paidFullBg,
-                color: dueAmount > 0 ? SAMPLE.red : SAMPLE.paidFullText,
+                background: dueAmount > 0 ? C.redBg : C.paidFullBg,
+                color: dueAmount > 0 ? C.red : C.paidFullText,
                 fontWeight: 800,
                 fontSize: "10pt",
                 WebkitPrintColorAdjust: "exact",
@@ -604,9 +608,9 @@ export const ThemedInvoiceDocument = ({
       {showSection("showInWords") && L.body.showInWords && (
         <div
           className="invoice-print-inwords invoice-keep-together"
-          style={{ marginBottom: "4mm", fontSize: "9pt", color: SAMPLE.muted }}
+          style={{ marginBottom: "4mm", fontSize: "9pt", color: C.muted }}
         >
-          <span style={{ fontWeight: 700, color: SAMPLE.text }}>In Word : </span>
+          <span style={{ fontWeight: 700, color: C.text }}>In Word : </span>
           <span>{inWords}</span>
         </div>
       )}
@@ -616,11 +620,11 @@ export const ThemedInvoiceDocument = ({
         <section
           className="invoice-print-notes invoice-keep-together"
           style={{
-            border: `1px solid ${SAMPLE.border}`,
+            border: `1px solid ${C.border}`,
             borderRadius: "6px",
             padding: "8px 10px",
             marginBottom: "4mm",
-            color: SAMPLE.muted,
+            color: C.muted,
             whiteSpace: "pre-line",
             fontSize: "9pt",
           }}
@@ -634,7 +638,7 @@ export const ThemedInvoiceDocument = ({
         <section
           className="invoice-print-payment-history invoice-keep-together"
           style={{
-            border: `1px solid ${SAMPLE.border}`,
+            border: `1px solid ${C.border}`,
             borderRadius: "8px",
             padding: "10px 12px",
             marginBottom: "6mm",
@@ -648,7 +652,7 @@ export const ThemedInvoiceDocument = ({
               fontSize: "10pt",
               textTransform: "uppercase",
               marginBottom: "8px",
-              color: SAMPLE.blue,
+              color: C.blue,
               letterSpacing: "0.3px",
             }}
           >
@@ -664,7 +668,7 @@ export const ThemedInvoiceDocument = ({
                 gap: "3mm",
                 padding: idx === 0 ? "0" : "7px 0 0",
                 marginTop: idx === 0 ? 0 : "7px",
-                borderTop: idx === 0 ? "none" : `1px solid ${SAMPLE.border}`,
+                borderTop: idx === 0 ? "none" : `1px solid ${C.border}`,
                 fontSize: "9pt",
               }}
             >
@@ -672,30 +676,30 @@ export const ThemedInvoiceDocument = ({
                 style={{
                   width: "3px",
                   alignSelf: "stretch",
-                  background: SAMPLE.teal,
+                  background: C.teal,
                   borderRadius: "2px",
                   flexShrink: 0,
                   minHeight: "18px",
                 }}
               />
-              <span style={{ color: SAMPLE.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
+              <span style={{ color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
                 {formatDate(inst.paid_date)}
               </span>
               <span style={{ flexShrink: 0, lineHeight: 0 }}>
                 <InvoicePillBadge
                   label={inst.payment_method || "Cash"}
                   backgroundColor="#e5e7eb"
-                  color={SAMPLE.muted}
+                  color={C.muted}
                   size="sm"
                 />
               </span>
-              <span style={{ color: SAMPLE.muted, flex: 1 }}>
+              <span style={{ color: C.muted, flex: 1 }}>
                 — {getOrdinal(idx + 1)} Payment
               </span>
               <span
                 style={{
                   fontWeight: 800,
-                  color: SAMPLE.teal,
+                  color: C.teal,
                   whiteSpace: "nowrap",
                   flexShrink: 0,
                 }}
@@ -715,7 +719,7 @@ export const ThemedInvoiceDocument = ({
         data-pdf-footer
         className="invoice-footer-block invoice-print-footer invoice-keep-together"
         style={{
-          borderTop: `1px solid ${SAMPLE.border}`,
+          borderTop: `1px solid ${C.border}`,
           paddingTop: `${L.footer.paddingTop}mm`,
           pageBreakInside: "avoid",
           breakInside: "avoid-page",
@@ -759,10 +763,10 @@ export const ThemedInvoiceDocument = ({
                 </div>
                 <div
                   style={{
-                    borderTop: `1px solid ${SAMPLE.border}`,
+                    borderTop: `1px solid ${C.border}`,
                     paddingTop: "5px",
                     fontSize: "9pt",
-                    color: SAMPLE.text,
+                    color: C.text,
                   }}
                 >
                   {entry.label}
@@ -778,7 +782,7 @@ export const ThemedInvoiceDocument = ({
               textAlign: "center",
               marginBottom: "4mm",
               fontSize: "9pt",
-              color: SAMPLE.muted,
+              color: C.muted,
             }}
           >
             {footerThankYou || "Thank you for staying with us."}
@@ -798,7 +802,7 @@ export const ThemedInvoiceDocument = ({
               <div
                 style={{
                   textAlign: "left",
-                  color: SAMPLE.muted,
+                  color: C.muted,
                   fontSize: `${L.footer.fontSize}pt`,
                   lineHeight: 1.5,
                 }}
@@ -814,7 +818,7 @@ export const ThemedInvoiceDocument = ({
             {L.footer.showQR && showQR && (
               <div style={{ textAlign: "center", justifySelf: "end" }}>
                 <InvoiceQRCode invoiceId={invoice.id} size={L.footer.qrSize} showLabel={false} />
-                <div style={{ fontSize: "7pt", color: SAMPLE.muted, marginTop: "3px" }}>
+                <div style={{ fontSize: "7pt", color: C.muted, marginTop: "3px" }}>
                   Scan the QR code for details
                 </div>
               </div>

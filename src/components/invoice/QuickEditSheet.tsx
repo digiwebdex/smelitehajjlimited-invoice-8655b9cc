@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/apiClient";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface QuickEditSheetProps {
   open: boolean;
@@ -32,6 +33,7 @@ interface QuickEditSheetProps {
 export function QuickEditSheet({ open, onOpenChange, invoice }: QuickEditSheetProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
 
   const [clientName, setClientName] = useState(invoice.client_name);
@@ -58,7 +60,7 @@ export function QuickEditSheet({ open, onOpenChange, invoice }: QuickEditSheetPr
 
     setSaving(true);
     try {
-      const { error } = await api.patch(`/invoices/${invoice.id}/quick-edit`, {
+      const { data, error } = await api.patch(`/invoices/${invoice.id}/quick-edit`, {
         client_name: clientName.trim(),
         client_email: clientEmail.trim() || null,
         client_phone: clientPhone.trim() || null,
@@ -67,8 +69,9 @@ export function QuickEditSheet({ open, onOpenChange, invoice }: QuickEditSheetPr
       });
 
       if (error) throw new Error(error);
+      if (!data) throw new Error("Invoice not found or could not be updated");
 
-      queryClient.invalidateQueries({ queryKey: ["invoice", invoice.id] });
+      queryClient.invalidateQueries({ queryKey: ["invoice", user?.id, invoice.id] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
 
       toast({ title: "Invoice updated", description: "Quick corrections saved successfully." });
